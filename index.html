@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Paseos 🐕</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f3f7f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+    }
+    h1 {
+      margin-top: 20px;
+      color: #4b6cb7;
+    }
+    .container {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 15px;
+    }
+    button {
+      background: #4b6cb7;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #395591;
+    }
+    .resumen {
+      margin-top: 20px;
+      background: #eef2f3;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .perro {
+      border-bottom: 1px solid #ccc;
+      padding: 8px 0;
+    }
+    .acciones {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🐾 Control de Paseos</h1>
+
+  <div class="container">
+    <h3>Agregar perro</h3>
+    <input type="text" id="nombrePerro" placeholder="Nombre del perro">
+    <input type="number" id="tarifaPerro" placeholder="Valor por paseo">
+    <button onclick="agregarPerro()">Agregar perro</button>
+
+    <h3>Registrar paseo</h3>
+    <input type="text" id="paseoPerro" placeholder="Nombre del perro">
+    <button onclick="registrarPaseo()">Registrar paseo</button>
+
+    <div class="acciones">
+      <button onclick="mostrarResumen()">Ver resumen mensual</button>
+      <button onclick="reiniciarMes()">Reiniciar mes</button>
+    </div>
+
+    <div class="resumen" id="resumen">
+      <h3>Resumen</h3>
+      <p>No hay datos aún.</p>
+    </div>
+  </div>
+
+  <script>
+    // Cargar datos guardados
+    let perros = JSON.parse(localStorage.getItem('perros')) || [];
+
+    function guardarDatos() {
+      localStorage.setItem('perros', JSON.stringify(perros));
+    }
+
+    function agregarPerro() {
+      const nombre = document.getElementById('nombrePerro').value.trim();
+      const tarifa = parseFloat(document.getElementById('tarifaPerro').value);
+      if (!nombre || isNaN(tarifa)) {
+        alert("Por favor escribe el nombre y la tarifa del perro.");
+        return;
+      }
+
+      const perroExistente = perros.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+      if (perroExistente) {
+        alert("Ese perro ya está registrado.");
+        return;
+      }
+
+      perros.push({ nombre, tarifa, paseos: 0 });
+      guardarDatos();
+      document.getElementById('nombrePerro').value = '';
+      document.getElementById('tarifaPerro').value = '';
+      alert(`Perro ${nombre} agregado correctamente.`);
+    }
+
+    function registrarPaseo() {
+      const nombre = document.getElementById('paseoPerro').value.trim();
+      if (!nombre) {
+        alert("Escribe el nombre del perro para registrar el paseo.");
+        return;
+      }
+
+      const perro = perros.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+      if (!perro) {
+        alert("Ese perro no está registrado.");
+        return;
+      }
+
+      perro.paseos += 1;
+      guardarDatos();
+      document.getElementById('paseoPerro').value = '';
+      alert(`Paseo registrado para ${perro.nombre}.`);
+    }
+
+    function mostrarResumen() {
+      const resumenDiv = document.getElementById('resumen');
+      if (perros.length === 0) {
+        resumenDiv.innerHTML = "<p>No hay perros registrados aún.</p>";
+        return;
+      }
+
+      let totalPaseos = 0;
+      let totalDinero = 0;
+      let html = "";
+
+      perros.forEach(p => {
+        const dineroPerro = p.paseos * p.tarifa;
+        totalPaseos += p.paseos;
+        totalDinero += dineroPerro;
+        html += `
+          <div class="perro">
+            <strong>${p.nombre}</strong><br>
+            Paseos: ${p.paseos} <br>
+            Total ganado: $${dineroPerro.toFixed(2)}
+          </div>
+        `;
+      });
+
+      html += `<hr><strong>Total paseos:</strong> ${totalPaseos}<br><strong>Total dinero:</strong> $${totalDinero.toFixed(2)}`;
+      resumenDiv.innerHTML = html;
+    }
+
+    function reiniciarMes() {
+      if (confirm("¿Seguro que quieres reiniciar los datos del mes?")) {
+        perros.forEach(p => p.paseos = 0);
+        guardarDatos();
+        mostrarResumen();
+        alert("Datos del mes reiniciados.");
+      }
+    }
+  </script>
+
+</body>
+</html>
