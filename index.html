@@ -1,178 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Paseos 🐕</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paseos Esposita 💙</title>
+
+  <!-- Librería para generar Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      background: #f3f7f8;
+      font-family: 'Poppins', sans-serif;
+      background-color: #eaf3ff;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      color: #333;
+      color: #0a3d91;
     }
+
     h1 {
-      margin-top: 20px;
-      color: #4b6cb7;
+      background-color: #0a3d91;
+      color: white;
+      width: 100%;
+      text-align: center;
+      padding: 15px 0;
+      margin: 0;
+      border-bottom: 4px solid #5da9ff;
     }
+
     .container {
-      width: 90%;
-      max-width: 400px;
       background: white;
-      border-radius: 10px;
-      padding: 20px;
-      margin-top: 20px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      margin-top: 30px;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 480px;
     }
-    input, button {
+
+    input, select {
       width: 100%;
       padding: 10px;
-      margin: 6px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 15px;
-    }
-    button {
-      background: #4b6cb7;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-    button:hover {
-      background: #395591;
-    }
-    .resumen {
-      margin-top: 20px;
-      background: #eef2f3;
+      margin-bottom: 10px;
+      border: 1px solid #5da9ff;
       border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #0a3d91;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #082c6c;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background-color: #eaf3ff;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      border-left: 5px solid #0a3d91;
+    }
+
+    .totales, .informe {
+      margin-top: 20px;
+      background: #d6e8ff;
       padding: 15px;
-    }
-    .perro {
-      border-bottom: 1px solid #ccc;
-      padding: 8px 0;
-    }
-    .acciones {
-      margin-top: 10px;
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      white-space: pre-line;
     }
   </style>
 </head>
 <body>
-
-  <h1>🐾 Control de Paseos</h1>
+  <h1>Paseos Esposita 💙</h1>
 
   <div class="container">
-    <h3>Agregar perro</h3>
-    <input type="text" id="nombrePerro" placeholder="Nombre del perro">
-    <input type="number" id="tarifaPerro" placeholder="Valor por paseo">
-    <button onclick="agregarPerro()">Agregar perro</button>
+    <input type="text" id="nombre" placeholder="Nombre del perro 🐾">
+    <input type="number" id="valor" placeholder="Valor del paseo 💰">
+    <button onclick="agregarPaseo()">Agregar paseo</button>
+    <button onclick="mostrarTotales()">Ver totales</button>
+    <button onclick="reiniciar()">Reiniciar mes</button>
 
-    <h3>Registrar paseo</h3>
-    <input type="text" id="paseoPerro" placeholder="Nombre del perro">
-    <button onclick="registrarPaseo()">Registrar paseo</button>
+    <h3>📋 Informe individual</h3>
+    <input type="text" id="nombreInforme" placeholder="Nombre del perro para el informe">
+    <button onclick="mostrarInforme()">Ver informe del perro</button>
+    <button onclick="descargarExcel()">Descargar Excel del perro</button>
 
-    <div class="acciones">
-      <button onclick="mostrarResumen()">Ver resumen mensual</button>
-      <button onclick="reiniciarMes()">Reiniciar mes</button>
-    </div>
-
-    <div class="resumen" id="resumen">
-      <h3>Resumen</h3>
-      <p>No hay datos aún.</p>
-    </div>
+    <ul id="lista"></ul>
+    <div class="totales" id="totales"></div>
+    <div class="informe" id="informe"></div>
   </div>
 
   <script>
-    // Cargar datos guardados
-    let perros = JSON.parse(localStorage.getItem('perros')) || [];
+    let paseos = JSON.parse(localStorage.getItem('paseos')) || [];
 
-    function guardarDatos() {
-      localStorage.setItem('perros', JSON.stringify(perros));
+    function guardar() {
+      localStorage.setItem('paseos', JSON.stringify(paseos));
     }
 
-    function agregarPerro() {
-      const nombre = document.getElementById('nombrePerro').value.trim();
-      const tarifa = parseFloat(document.getElementById('tarifaPerro').value);
-      if (!nombre || isNaN(tarifa)) {
-        alert("Por favor escribe el nombre y la tarifa del perro.");
+    function agregarPaseo() {
+      const nombre = document.getElementById('nombre').value.trim();
+      const valor = parseFloat(document.getElementById('valor').value);
+      if (!nombre || isNaN(valor)) {
+        alert("Por favor, completa todos los campos.");
         return;
       }
 
-      const perroExistente = perros.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-      if (perroExistente) {
-        alert("Ese perro ya está registrado.");
-        return;
-      }
+      const fecha = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      perros.push({ nombre, tarifa, paseos: 0 });
-      guardarDatos();
-      document.getElementById('nombrePerro').value = '';
-      document.getElementById('tarifaPerro').value = '';
-      alert(`Perro ${nombre} agregado correctamente.`);
+      paseos.push({ nombre, valor, fecha });
+      guardar();
+      mostrarLista();
+      document.getElementById('nombre').value = '';
+      document.getElementById('valor').value = '';
     }
 
-    function registrarPaseo() {
-      const nombre = document.getElementById('paseoPerro').value.trim();
-      if (!nombre) {
-        alert("Escribe el nombre del perro para registrar el paseo.");
-        return;
-      }
-
-      const perro = perros.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-      if (!perro) {
-        alert("Ese perro no está registrado.");
-        return;
-      }
-
-      perro.paseos += 1;
-      guardarDatos();
-      document.getElementById('paseoPerro').value = '';
-      alert(`Paseo registrado para ${perro.nombre}.`);
+    function mostrarLista() {
+      const lista = document.getElementById('lista');
+      lista.innerHTML = '';
+      paseos.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.nombre} - $${p.valor.toFixed(0)} - ${p.fecha}`;
+        lista.appendChild(li);
+      });
     }
 
-    function mostrarResumen() {
-      const resumenDiv = document.getElementById('resumen');
-      if (perros.length === 0) {
-        resumenDiv.innerHTML = "<p>No hay perros registrados aún.</p>";
+    function mostrarTotales() {
+      const totalesDiv = document.getElementById('totales');
+      if (paseos.length === 0) {
+        totalesDiv.textContent = 'No hay paseos registrados.';
         return;
       }
 
-      let totalPaseos = 0;
-      let totalDinero = 0;
-      let html = "";
-
-      perros.forEach(p => {
-        const dineroPerro = p.paseos * p.tarifa;
-        totalPaseos += p.paseos;
-        totalDinero += dineroPerro;
-        html += `
-          <div class="perro">
-            <strong>${p.nombre}</strong><br>
-            Paseos: ${p.paseos} <br>
-            Total ganado: $${dineroPerro.toFixed(2)}
-          </div>
-        `;
+      const resumen = {};
+      let totalGeneral = 0;
+      paseos.forEach(p => {
+        resumen[p.nombre] = (resumen[p.nombre] || 0) + p.valor;
+        totalGeneral += p.valor;
       });
 
-      html += `<hr><strong>Total paseos:</strong> ${totalPaseos}<br><strong>Total dinero:</strong> $${totalDinero.toFixed(2)}`;
-      resumenDiv.innerHTML = html;
+      let texto = "💙 Totales del mes 💙\n\n";
+      for (const perro in resumen) {
+        texto += `${perro}: $${resumen[perro].toFixed(0)}\n`;
+      }
+      texto += `\nTOTAL GENERAL: $${totalGeneral.toFixed(0)}`;
+      totalesDiv.textContent = texto;
     }
 
-    function reiniciarMes() {
-      if (confirm("¿Seguro que quieres reiniciar los datos del mes?")) {
-        perros.forEach(p => p.paseos = 0);
-        guardarDatos();
-        mostrarResumen();
-        alert("Datos del mes reiniciados.");
+    function mostrarInforme() {
+      const nombreInforme = document.getElementById('nombreInforme').value.trim();
+      const informeDiv = document.getElementById('informe');
+
+      if (!nombreInforme) {
+        alert("Escribe el nombre del perro para generar el informe.");
+        return;
+      }
+
+      const paseosPerro = paseos.filter(p => p.nombre.toLowerCase() === nombreInforme.toLowerCase());
+
+      if (paseosPerro.length === 0) {
+        informeDiv.textContent = `No hay paseos registrados para ${nombreInforme}.`;
+        return;
+      }
+
+      let total = 0;
+      let texto = `🐶 Informe de ${nombreInforme}\n\n`;
+
+      paseosPerro.forEach(p => {
+        texto += `📅 ${p.fecha} - $${p.valor.toFixed(0)}\n`;
+        total += p.valor;
+      });
+
+      texto += `\n💵 Total ganado con ${nombreInforme}: $${total.toFixed(0)}`;
+      informeDiv.textContent = texto;
+    }
+
+    // ✅ Nueva función: Generar Excel con mensaje final
+    function descargarExcel() {
+      const nombreInforme = document.getElementById('nombreInforme').value.trim();
+      if (!nombreInforme) {
+        alert("Escribe el nombre del perro para generar su Excel.");
+        return;
+      }
+
+      const paseosPerro = paseos.filter(p => p.nombre.toLowerCase() === nombreInforme.toLowerCase());
+      if (paseosPerro.length === 0) {
+        alert(`No hay paseos registrados para ${nombreInforme}.`);
+        return;
+      }
+
+      // Crear datos para Excel
+      const datos = [["Fecha", "Valor"]];
+      let total = 0;
+      paseosPerro.forEach(p => {
+        datos.push([p.fecha, `$${p.valor}`]);
+        total += p.valor;
+      });
+      datos.push(["", ""]);
+      datos.push(["Total ganado", `$${total}`]);
+      datos.push(["", "Gracias por confiar en Trazo Azul 💙"]);
+
+      // Crear hoja y archivo Excel
+      const ws = XLSX.utils.aoa_to_sheet(datos);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Informe");
+
+      XLSX.writeFile(wb, `Informe_${nombreInforme}.xlsx`);
+    }
+
+    function reiniciar() {
+      if (confirm("¿Seguro que quieres reiniciar los paseos del mes?")) {
+        paseos = [];
+        guardar();
+        mostrarLista();
+        document.getElementById('totales').textContent = '';
+        document.getElementById('informe').textContent = '';
       }
     }
-  </script>
 
+    mostrarLista();
+  </script>
 </body>
 </html>
+
