@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paseos Esposita 🐶</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fff8f0;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #ff7b7b;
+    }
+    input, button {
+      margin: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #ff7b7b;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ff5252;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #ffbaba;
+    }
+    #resumen {
+      margin-top: 30px;
+      font-weight: bold;
+      background: #ffecec;
+      padding: 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐾 Paseos Esposita 🐾</h1>
+
+  <input type="text" id="nombrePerro" placeholder="Nombre del perro">
+  <input type="number" id="valorPaseo" placeholder="Valor del paseo">
+  <button onclick="agregarPaseo()">Agregar paseo</button>
+  <button onclick="mostrarResumen()">Mostrar resumen mensual</button>
+  <button onclick="reiniciar()">Reiniciar mes</button>
+
+  <table id="tablaPaseos">
+    <thead>
+      <tr>
+        <th>Perro</th>
+        <th>Valor</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="resumen"></div>
+
+  <script>
+    let paseos = JSON.parse(localStorage.getItem("paseos")) || [];
+
+    function agregarPaseo() {
+      const nombre = document.getElementById("nombrePerro").value.trim();
+      const valor = parseFloat(document.getElementById("valorPaseo").value);
+
+      if (!nombre || isNaN(valor)) {
+        alert("Por favor ingresa el nombre y el valor del paseo.");
+        return;
+      }
+
+      // Obtener la fecha actual
+      const fecha = new Date();
+      const fechaTexto = fecha.toLocaleDateString('es-CO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+
+      paseos.push({ nombre, valor, fecha: fechaTexto });
+      localStorage.setItem("paseos", JSON.stringify(paseos));
+
+      document.getElementById("nombrePerro").value = "";
+      document.getElementById("valorPaseo").value = "";
+
+      mostrarPaseos();
+    }
+
+    function mostrarPaseos() {
+      const tbody = document.querySelector("#tablaPaseos tbody");
+      tbody.innerHTML = "";
+
+      paseos.forEach(p => {
+        const fila = `<tr>
+          <td>${p.nombre}</td>
+          <td>$${p.valor.toFixed(0)}</td>
+          <td>${p.fecha}</td>
+        </tr>`;
+        tbody.innerHTML += fila;
+      });
+    }
+
+    function mostrarResumen() {
+      const resumenDiv = document.getElementById("resumen");
+      const totales = {};
+
+      paseos.forEach(p => {
+        if (!totales[p.nombre]) totales[p.nombre] = 0;
+        totales[p.nombre] += p.valor;
+      });
+
+      let totalGeneral = 0;
+      let texto = "📅 <b>Resumen del mes:</b><br><br>";
+
+      for (let perro in totales) {
+        texto += `${perro}: $${totales[perro].toFixed(0)}<br>`;
+        totalGeneral += totales[perro];
+      }
+
+      texto += `<br>💰 <b>Total general:</b> $${totalGeneral.toFixed(0)}`;
+      resumenDiv.innerHTML = texto;
+    }
+
+    function reiniciar() {
+      if (confirm("¿Seguro que quieres reiniciar los datos del mes?")) {
+        paseos = [];
+        localStorage.removeItem("paseos");
+        mostrarPaseos();
+        document.getElementById("resumen").innerHTML = "";
+      }
+    }
+
+    mostrarPaseos();
+  </script>
+</body>
+</html>
